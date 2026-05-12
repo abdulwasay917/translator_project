@@ -1,32 +1,60 @@
-from django.http import JsonResponse
+import re
 from django.shortcuts import render
+from django.http import JsonResponse
 from deep_translator import GoogleTranslator
-from langdetect import detect
 
 
+# ---------------------------
+# Detect Urdu text
+# ---------------------------
+def is_urdu(text):
+    return any('\u0600' <= c <= '\u06FF' for c in text)
+
+
+# ---------------------------
+# Home
+# ---------------------------
 def home(request):
     return render(request, "translator/home.html")
 
 
+# ---------------------------
+# Translation API (FINAL STABLE)
+# ---------------------------
 def translate_text(request):
+
     if request.method == "POST":
 
-        text = request.POST.get("text")
-        target = request.POST.get("target")
+        text = request.POST.get("text", "").strip()
+        target = request.POST.get("target", "").strip()
+
+        print("TEXT:", text)
+        print("TARGET:", target)
+
+        if not text or not target:
+            return JsonResponse({"error": "Missing input"})
 
         try:
-            # AUTO detect source language
-            detected_lang = detect(text)
+            # STEP 1: detect language
+            source = "ur" if is_urdu(text) else "en"
 
+            # STEP 2: prevent same-language bug
+            if source == target:
+                return JsonResponse({
+                    "translated": text,
+                    "detected": source
+                }, json_dumps_params={'ensure_ascii': False})
+
+            # STEP 3: translate (SAFE MODE)
             translated = GoogleTranslator(
-                source=detected_lang,
+                source="auto",
                 target=target
             ).translate(text)
 
             return JsonResponse({
                 "translated": translated,
-                "detected": detected_lang
-            })
+                "detected": source
+            }, json_dumps_params={'ensure_ascii': False})
 
         except Exception as e:
             return JsonResponse({"error": str(e)})
