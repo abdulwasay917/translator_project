@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Translator</title>
+</head>
+<body>
+
+<h2>English ↔ Urdu Translator</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <textarea name="text" rows="5" cols="40">{{ text }}</textarea>
+
+    <br><br>
+
+    <select name="direction">
+        <option value="en_ur">English → Urdu</option>
+        <option value="ur_en">Urdu → English</option>
+    </select>
+
+    <br><br>
+
+    <button type="submit">Translate</button>
+</form>
+
+{% if translated %}
+    <h3>Result:</h3>
+    <p>{{ translated }}</p>
+{% endif %}
+
+</body>
+</html>
