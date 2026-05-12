@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.shortcuts import render
 from deep_translator import GoogleTranslator
+from langdetect import detect
 
 
 def home(request):
@@ -9,16 +10,23 @@ def home(request):
 
 def translate_text(request):
     if request.method == "POST":
+
         text = request.POST.get("text")
-        direction = request.POST.get("direction")
+        target = request.POST.get("target")
 
         try:
-            if direction == "en_ur":
-                translated = GoogleTranslator(source='en', target='ur').translate(text)
-            else:
-                translated = GoogleTranslator(source='ur', target='en').translate(text)
+            # AUTO detect source language
+            detected_lang = detect(text)
 
-            return JsonResponse({"translated": translated})
+            translated = GoogleTranslator(
+                source=detected_lang,
+                target=target
+            ).translate(text)
+
+            return JsonResponse({
+                "translated": translated,
+                "detected": detected_lang
+            })
 
         except Exception as e:
             return JsonResponse({"error": str(e)})
